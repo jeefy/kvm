@@ -1,6 +1,5 @@
 var net  = require('net');
 var _    = require('underscore');
-var mesg = require('./message.js');
 var storedData   = Array();
 var options      = Array();
 var writeStart   = null;

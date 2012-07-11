@@ -3,7 +3,7 @@ var sections = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
 var cluster = require('cluster')
     , net       = require('net')
     , extPort   = 'tcp://127.0.0.1:1337'
-    , threads   = 6
+    , threads   = 4
     , dataStore = {}
     , serverIds = {}
     , clients   = []
@@ -22,10 +22,8 @@ if (cluster.isMaster) {
 	    var done = "";
 	    while((messages = msgRegex.exec(line)) != null){
 	        done += '!!@@##$$' + messages[1] + '$$##@@!!';
-                var command = messages[1].substr(0, 4);
-                var data    = messages[1].substr(5);
-                var key     = data[0].toUpperCase();
-	        var msg = {'command': command, 'data': data, 'client': clients.indexOf(this)};
+                var key     = messages[1][5].toUpperCase();
+	        var msg = {'data': messages[1], 'client': clients.indexOf(this)};
 	        //interpret message, send to worker
 	        serverIds[key].send(msg);
 	    }
@@ -53,17 +51,19 @@ if (cluster.isMaster) {
     var dataStore = {};
 
     process.on('message', function(data){
-	var split   = data['data'].indexOf(' ');
+        var command  = data['data'].substr(0, 4);
+        data['data'] = data['data'].substr(5);
+	var split    = data['data'].indexOf(' ');
 	if(split > 0){
 	    var id = data['data'].substr(0, split);
 	} else {
 	    var id = data['data'];	
 	}
         var payload = data['data'].substr( split );
-	switch(data['command']){
+	switch(command){
 	    case "STOR":
-                dataStore[id] = payload;
 	        process.send({'data' : 'OK   ' + id, 'client' : data['client']});
+                dataStore[id] = payload;
 	        break;
 	    case "RETR":
 		if(id in dataStore){
